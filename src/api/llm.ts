@@ -1,4 +1,3 @@
-import { Message } from "../types/chat";
 
 export interface APISettings {
   apiKey: string;
