@@ -16,7 +16,7 @@ interface ChatState {
   activeId: string | null;
   isInitialized: boolean;
   settings: APISettings;
-  
+
   init: () => Promise<void>;
   setSettings: (settings: Partial<APISettings>) => void;
   createConversation: () => void;
@@ -39,7 +39,7 @@ const debounceSave = (() => {
   };
 })();
 
-export const useChatStore = create<ChatState>((set, get) => ({
+export const useChatStore = create<ChatState>((set) => ({
   conversations: [],
   activeId: null,
   isInitialized: false,
@@ -54,12 +54,12 @@ export const useChatStore = create<ChatState>((set, get) => ({
       if (savedSettings) {
         initSettings = { ...DEFAULT_SETTINGS, ...JSON.parse(savedSettings) };
       }
-      
-      set({ 
-        conversations: allConvs, 
+
+      set({
+        conversations: allConvs,
         activeId: allConvs.length > 0 ? allConvs[0].id : null,
         settings: initSettings,
-        isInitialized: true 
+        isInitialized: true
       });
     } catch (e) {
       console.error('Failed to load DB:', e);
