@@ -1,0 +1,12 @@
+{
+  "rewrites": [
+    {
+      "source": "/xf-api/(.*)",
+      "destination": "https://spark-api-open.xf-yun.com/$1"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
