@@ -1,8 +1,9 @@
 import * as pdfjsLib from 'pdfjs-dist';
+import pdfWorkerURL from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import mammoth from 'mammoth';
 
-// 采用 CDN worker 加载 pdfjs 的 worker (解决 Vite 打包 worker 路径复杂的问题)
-pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
+// 使用 Vite 内置的 URL 导入机制，完美解决 worker 路径跨域或 404 问题
+pdfjsLib.GlobalWorkerOptions.workerSrc = pdfWorkerURL;
 
 export const parseDocumentToText = async (file: File): Promise<string> => {
   const extension = file.name.split('.').pop()?.toLowerCase();
@@ -35,8 +36,8 @@ export const parseDocumentToText = async (file: File): Promise<string> => {
     }
 
     throw new Error(`暂不支持该文件格式解析: ${extension}`);
-  } catch (error) {
+  } catch (error: any) {
     console.error('Document parsing error:', error);
-    throw new Error('文档内容提取失败，请检查文件是否损坏。');
+    throw new Error(`文档提取失败: ${error.message || String(error)}`);
   }
 };
