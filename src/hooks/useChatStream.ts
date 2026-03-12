@@ -3,16 +3,18 @@ import { useChatStore } from '../store/chatStore';
 import { fetchLLMStream } from '../api/llm';
 import { createMockChatStream } from '../api/mockStreaming';
 
+import { Attachment } from '../types/chat';
+
 export const useChatStream = () => {
   const { addMessage, updateMessageStream, settings } = useChatStore();
   const abortControllerRef = useRef<AbortController | null>(null);
   const [isGenerating, setIsGenerating] = useState(false);
 
-  const sendMessage = useCallback(async (conversationId: string, text: string) => {
-    if (isGenerating) return;
+  const sendMessage = useCallback(async (conversationId: string, text: string, attachments?: Attachment[]) => {
+    if ((!text.trim() && (!attachments || attachments.length === 0)) || isGenerating) return;
     
     // 1. 本地立即将用户发的话上屏
-    addMessage(conversationId, { role: 'user', content: text });
+    addMessage(conversationId, { role: 'user', content: text, attachments });
     // 2. 也是在本地立即新增一个空的 AI 消息盒子
     const assistantMsgId = addMessage(conversationId, { role: 'assistant', content: '' });
 
@@ -39,8 +41,8 @@ export const useChatStream = () => {
       // 拼装：系统提示词 + 裁剪后的历史记录 + 当前用户的最新的一句话
       const finalMessages = [
         ...payloadMessages,
-        ...trimmedHistory.map(m => ({ role: m.role, content: m.content })),
-        { role: 'user', content: text }
+        ...trimmedHistory.map(m => ({ role: m.role, content: m.content, attachments: m.attachments })),
+        { role: 'user', content: text, attachments: attachments }
       ];
 
       let reader: ReadableStreamDefaultReader<Uint8Array>;

@@ -1,3 +1,4 @@
+import { Attachment } from '../types/chat';
 
 export interface APISettings {
   apiKey: string;
@@ -12,7 +13,8 @@ export interface APISettings {
  * 为什么不用官方 openai-node SDK？因为它太重了，手写 SSE 解析能极大展示你的原生 JS 网络功底！
  */
 export const fetchLLMStream = async (
-  messages: { role: string; content: string }[], // Detached from UI Message type
+  messages: { role: string; content: string; attachments?: Attachment[] }[], // Context with attachments
+
   settings: APISettings,
   signal: AbortSignal
 ): Promise<ReadableStream<Uint8Array>> => {
@@ -22,10 +24,25 @@ export const fetchLLMStream = async (
   const cleanBaseUrl = baseUrl.replace(/\/$/, "");
 
   // 1. 把我们的本地数据格式，转换成 OpenAI API 需要的格式
-  const apiMessages = messages.map(m => ({
-    role: m.role,
-    content: m.content
-  }));
+  const apiMessages = messages.map(m => {
+    if (m.attachments && m.attachments.length > 0) {
+      const contentArray: any[] = [{ type: 'text', text: m.content || ' ' }]; // Vision API usually requires at least an empty space
+      m.attachments.forEach(att => {
+        if (att.type === 'image') {
+          contentArray.push({
+            type: 'image_url',
+            image_url: { url: att.data }
+          });
+        } else if (att.type === 'document') {
+          // Temporarily append document data as text 
+          contentArray[0].text += `\n\n[Document: ${att.name}]\n${att.data}`;
+        }
+      });
+      return { role: m.role, content: contentArray };
+    }
+
+    return { role: m.role, content: m.content };
+  });
 
   // 2. 发起真实的 Fetch 请求，告诉服务器我们要 stream: true
   // 适配兼容各种大模型平台（如 DeepSeek, 通义千问, 智谱等），只要他们兼容 OpenAI 格式
